@@ -1,0 +1,338 @@
+{
+  "name": "RAG powered Chatbot",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "triggerOn": "specificFolder",
+        "folderToWatch": {
+          "__rl": true,
+          "value": "1_I-OEiCUyxld7M5JVjFzohrYRT5vcaK_",
+          "mode": "list",
+          "cachedResultName": "Alex portfolio ",
+          "cachedResultUrl": "https://drive.google.com/drive/folders/1_I-OEiCUyxld7M5JVjFzohrYRT5vcaK_"
+        },
+        "event": "fileCreated",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDriveTrigger",
+      "typeVersion": 1,
+      "position": [
+        -976,
+        -32
+      ],
+      "id": "04e83b85-2b6e-4708-9399-a84a48b4e36e",
+      "name": "Google Drive Trigger",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "EVImG9Yw0zz2vAkQ",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -624,
+        -32
+      ],
+      "id": "12a991d1-a2a2-4c2e-8458-183d8a5a951a",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "EVImG9Yw0zz2vAkQ",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -272,
+        -64
+      ],
+      "id": "0c9ea138-8800-4098-8f9b-92e31ef32c30",
+      "name": "Supabase Vector Store",
+      "credentials": {
+        "supabaseApi": {
+          "id": "0qofHqyy3T2xOWZ6",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "file",
+                "value": "={{ $json.name }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        -112,
+        144
+      ],
+      "id": "f1df9aca-e2ec-486b-9450-e5ade3c9a9c2",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -288,
+        144
+      ],
+      "id": "5f0f6ce5-13d4-4aaf-a42e-221e91e1971c",
+      "name": "Embeddings Google Gemini",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "3K0xoKslKMmU4rjZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "mode": "webhook",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -960,
+        -224
+      ],
+      "id": "1d351cab-c50f-40df-81e1-aae32483ecf2",
+      "name": "When chat message received",
+      "webhookId": "364a7fb4-3a0c-48f6-bae8-096c80972ab5"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are an intelligent AI assistant that answers questions only using the information found in the provided CONTEXT.\n\nYour knowledge is limited strictly to the context supplied to you in each query. \nDo not invent, assume, or guess any details that are not clearly stated in the context.\n\nIf the answer cannot be found in the context, respond exactly with:\n\"I don't have that information in the provided documents.\"\n\nYour goals:\n1. Give clear, factual, and concise answers.\n2. Cite the source filenames and chunk indices from which you derived the information, in square brackets like [portfolio.pdf_chunk_2].\n3. Combine insights from multiple context snippets only if they refer to the same topic.\n4. Never reference or mention the concept of “context” or “embeddings” in your answers — respond as a natural conversation partner.\n5. Maintain a professional, confident, and factual tone (no opinions, guesses, or filler text).\n\nExample behavior:\n- ✅ If context says \"Alex Chen graduated from Stanford University in 2018\" and the user asks \"Where did Alex study?\", reply:  \n  \"Alex Chen completed his studies at Stanford University [portfolio.pdf_chunk_3].\"\n- 🚫 If context doesn’t mention where he studied, reply:  \n  \"I don't have that information in the provided documents.\"\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [
+        -672,
+        -432
+      ],
+      "id": "3cb107e5-099a-4115-8282-be30e37a52ea",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        -208
+      ],
+      "id": "57bc46dc-0513-4cd2-a7f8-a3aac891a71a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "3K0xoKslKMmU4rjZ",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -608,
+        -208
+      ],
+      "id": "375dc95b-b54d-496a-8c1b-866d9fb1c825",
+      "name": "Postgres Chat Memory",
+      "credentials": {
+        "postgres": {
+          "id": "iWXK6EzVvNoAbhtP",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Response to the query very specifically. ",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        -480,
+        -208
+      ],
+      "id": "8b18d8c5-5768-4ab0-a58e-7c098b5943ed",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "0qofHqyy3T2xOWZ6",
+          "name": "Supabase account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Drive Trigger": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "f138539e-7b85-42ae-90fc-7230adc231b8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c3e7bcce7ca4910640e953a04f7fc9c240ff34f7a76426307914d8f566bcce03"
+  },
+  "id": "I8OV4N0lRlar8zU7",
+  "tags": []
+}
